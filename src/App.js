@@ -1,25 +1,46 @@
-import logo from './logo.svg';
 import './App.css';
+import React, {useEffect, useRef, useState} from 'react';
+import fetchRacers from "./Api/RacerService";
+import Racer from "./components/racer";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const App = () => {
+    const [racers, setRacers] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const lastElement = useRef()
+    const observer = useRef()
+
+    const loadRacers = async () => {
+        setIsLoading(true)
+        const start = racers.length
+        const end = start + 50
+        const newRacers = await fetchRacers(start, end)
+        setRacers([...racers, ...newRacers])
+        setIsLoading(false)
+    };
+
+    useEffect(() => {
+        if(observer.current) observer.current.disconnect()
+        const callback = function (entries) {
+            if (entries[0].isIntersecting) {
+                loadRacers()
+            }
+        };
+        observer.current = new IntersectionObserver(callback);
+        observer.current.observe(lastElement.current)
+    }, [loadRacers])
+
+    return (
+        <>
+            <div className="container-wrapper">
+                {racers.map((racer) => {
+                        return <Racer key={racer.id} racer={racer}/>
+                    }
+                )}
+                {isLoading && <h1>Loading...</h1>}
+            </div>
+            <div ref={lastElement}/>
+        </>
+    )
 }
 
-export default App;
+export default App
